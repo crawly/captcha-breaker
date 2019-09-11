@@ -3,10 +3,9 @@
 
 namespace Crawly\CaptchaBreaker\Provider\AntiCaptcha;
 
-use Crawly\CaptchaBreaker\Exception\BreakFailedException;
 use Crawly\CaptchaBreaker\Exception\SetupFailedException;
-use Crawly\CaptchaBreaker\Exception\TaskCreationFailed;
 use Crawly\CaptchaBreaker\Provider\ProviderInterface;
+use Psr\Log\LoggerInterface;
 
 class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
 {
@@ -15,14 +14,33 @@ class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
     private $pageAction;
     private $minScore;
 
+    public function __construct(
+        string $clientKey,
+        string $websiteURL,
+        string $websiteKey,
+        string $pageAction,
+        float $minScore,
+        LoggerInterface $logger = null
+    ) {
+        $this->clientKey  = $clientKey;
+        $this->websiteURL = $websiteURL;
+        $this->websiteKey = $websiteKey;
+        $this->pageAction = $pageAction;
+        $this->minScore   = $minScore;
+
+        $this->logger = $logger;
+
+        parent::__construct();
+    }
+
     protected function getPostData()
     {
         return [
-            "type" => "RecaptchaV3TaskProxyless",
+            "type"       => "RecaptchaV3TaskProxyless",
             "websiteURL" => $this->websiteURL,
             "websiteKey" => $this->websiteKey,
-            "minScore" => $this->minScore,
-            "pageAction" => $this->pageAction
+            "minScore"   => $this->minScore,
+            "pageAction" => $this->pageAction,
         ];
     }
 
@@ -33,37 +51,17 @@ class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
 
     public function solve(): string
     {
-        if (!$this->createTask()) {
-            dump($this->getErrorMessage());
-            throw new TaskCreationFailed($this->getErrorMessage());
-        }
-
-        if (!$this->waitForResult()) {
-            dump($this->getErrorMessage());
-            throw new BreakFailedException($this->getErrorMessage());
-        }
+        $this->createTask();
+        $this->waitForResult();
 
         return $this->getTaskSolution();
     }
 
-    public function setup(array $data): void
+    /**
+     * {@inheritDoc}
+     */
+    public function balance(): float
     {
-        dump($data);
-        $requiredKeys = [
-            'websiteURL',
-            'websiteKey',
-            'pageAction',
-            'minScore',
-            'clientKey'
-        ];
-
-        $illegalKeys = array_diff($requiredKeys, array_keys($data));
-        if (!empty($illegalKeys)) {
-            throw new SetupFailedException('Invalid keys: ' . implode(', ', $illegalKeys));
-        }
-
-        foreach ($data as $key => $value) {
-            $this->$key = $value;
-        }
+        return $this->getBalance();
     }
 }

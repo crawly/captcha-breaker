@@ -3,10 +3,8 @@
 
 namespace Crawly\CaptchaBreaker\Provider\AntiCaptcha;
 
-use Crawly\CaptchaBreaker\Exception\BreakFailedException;
-use Crawly\CaptchaBreaker\Exception\SetupFailedException;
-use Crawly\CaptchaBreaker\Exception\TaskCreationFailed;
 use Crawly\CaptchaBreaker\Provider\ProviderInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class NoCaptcha
@@ -19,32 +17,72 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
     protected $websiteURL;
     protected $websiteKey;
     protected $websiteSToken;
-    protected $proxyType = "http";
+    protected $proxyType;
     protected $proxyAddress;
     protected $proxyPort;
     protected $proxyLogin;
     protected $proxyPassword;
-    protected $userAgent = "";
-    protected $cookies = "";
+    protected $cookies;
 
-    protected function getPostData()
-    {
-        return array(
-            "type" => empty($this->proxyAddress) ? "NoCaptchaTaskProxyless" : "NoCaptchaTask",
-            "websiteURL" => $this->websiteURL,
-            "websiteKey" => $this->websiteKey,
-            "websiteSToken" => $this->websiteSToken,
-            "proxyType" => $this->proxyType,
-            "proxyAddress" => $this->proxyAddress,
-            "proxyPort" => $this->proxyPort,
-            "proxyLogin" => $this->proxyLogin,
-            "proxyPassword" => $this->proxyPassword,
-            "userAgent" => $this->userAgent,
-            "cookies" => $this->cookies
-        );
+    /**
+     * NoCaptcha constructor.
+     * @param string $clientKey
+     * @param string $websiteURL
+     * @param string $websiteKey
+     * @param LoggerInterface|null $logger
+     * @param string $proxyAddress
+     * @param string $proxyPort
+     * @param string $proxyLogin
+     * @param string $proxyPassword
+     * @param string $proxyType
+     * @param string $cookies
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+     */
+    public function __construct(
+        string $clientKey,
+        string $websiteURL,
+        string $websiteKey,
+        LoggerInterface $logger = null,
+        string $proxyAddress = '',
+        string $proxyPort = '',
+        string $proxyLogin = '',
+        string $proxyPassword = '',
+        string $proxyType = 'http',
+        string $cookies = ''
+    ) {
+        $this->clientKey  = $clientKey;
+        $this->websiteURL = $websiteURL;
+        $this->websiteKey = $websiteKey;
+
+        $this->logger        = $logger;
+        $this->proxyAddress  = $proxyAddress;
+        $this->proxyPort     = $proxyPort;
+        $this->proxyLogin    = $proxyLogin;
+        $this->proxyPassword = $proxyPassword;
+        $this->proxyType     = $proxyType;
+        $this->cookies       = $cookies;
+
+        parent::__construct();
     }
 
-    protected function getTaskSolution()
+    protected function getPostData(): array
+    {
+        return [
+            "type"          => empty($this->proxyAddress) ? "NoCaptchaTaskProxyless" : "NoCaptchaTask",
+            "websiteURL"    => $this->websiteURL,
+            "websiteKey"    => $this->websiteKey,
+            "websiteSToken" => $this->websiteSToken,
+            "proxyType"     => $this->proxyType,
+            "proxyAddress"  => $this->proxyAddress,
+            "proxyPort"     => $this->proxyPort,
+            "proxyLogin"    => $this->proxyLogin,
+            "proxyPassword" => $this->proxyPassword,
+            "cookies"       => $this->cookies,
+        ];
+    }
+
+    protected function getTaskSolution(): string
     {
         return $this->taskInfo->solution->gRecaptchaResponse;
     }
@@ -54,15 +92,8 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
      */
     public function solve(): string
     {
-        if (!$this->createTask()) {
-            dump($this->getErrorMessage());
-            throw new TaskCreationFailed($this->getErrorMessage());
-        }
-
-        if (!$this->waitForResult()) {
-            dump($this->getErrorMessage());
-            throw new BreakFailedException($this->getErrorMessage());
-        }
+        $this->createTask();
+        $this->waitForResult();
 
         return $this->getTaskSolution();
     }
@@ -70,37 +101,8 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
     /**
      * {@inheritDoc}
      */
-    public function setup(array $data): void
+    public function balance(): float
     {
-        $requiredKeys = [
-            'websiteURL',
-            'websiteKey',
-            'userAgent'
-        ];
-
-        $allowedKeys = [
-            'websiteToken',
-            'proxyType',
-            'proxyHost',
-            'proxyPort',
-            'proxyLogin',
-            'proxyPassword',
-            'cookies',
-            'invisible'
-        ];
-
-        $illegalKeys = array_intersect($requiredKeys, $allowedKeys, array_keys($data));
-        if (!empty($illegalKeys)) {
-            throw new SetupFailedException('Invalid keys: ' . implode(', ', $illegalKeys));
-        }
-
-        $missingKeys = array_diff($requiredKeys, array_keys($data));
-        if (!empty($missingKeys)) {
-            throw new SetupFailedException('Missing required keys: ' . implode(', ', $missingKeys));
-        }
-
-        foreach ($data as $key => $value) {
-            $this->$key = $value;
-        }
+        return $this->getBalance();
     }
 }

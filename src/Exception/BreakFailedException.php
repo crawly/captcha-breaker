@@ -11,8 +11,8 @@ use Throwable;
  */
 class BreakFailedException extends \Exception
 {
-    public function __construct(?string $providerMessage = '')
+    public function __construct(string $message = '')
     {
-        parent::__construct($providerMessage ?? 'Could not break the provided captcha', 'CB003');
+        parent::__construct($message ?? 'Could not break the provided captcha');
     }
 }

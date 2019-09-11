@@ -3,200 +3,181 @@
 
 namespace Crawly\CaptchaBreaker\Provider\AntiCaptcha;
 
+use Crawly\CaptchaBreaker\Exception\BalanceFailedException;
+use Crawly\CaptchaBreaker\Exception\BreakFailedException;
+use Crawly\CaptchaBreaker\Exception\TaskCreationFailedException;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\CurlHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\MessageFormatter;
+use GuzzleHttp\Middleware;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 
-class AntiCaptcha
+abstract class AntiCaptcha
 {
-    private $host = "api.anti-captcha.com";
-    private $scheme = "https";
+    private $host = 'api.anti-captcha.com';
+    private $scheme = 'https';
     protected $clientKey;
-    private $verboseMode = false;
-    private $errorMessage;
     private $taskId;
-    public $taskInfo;
+    protected $taskInfo;
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger = null;
+    /**
+     * @var Client
+     */
+    protected $client;
+
+    public function __construct()
+    {
+        $this->client = $this->instanceClient();
+    }
+
+    abstract protected function getPostData();
 
     /**
      * Submit new task and receive tracking ID
+     *
+     * @throws TaskCreationFailedException
      */
-    public function createTask()
+    protected function createTask(): void
     {
-        $postData = array(
+        $postData = [
             "clientKey" => $this->clientKey,
-            "task" => $this->getPostData()
-        );
-        $submitResult = $this->jsonPostRequest("createTask", $postData);
+            "task"      => $this->getPostData(),
+        ];
+
+        $submitResult = $this->request("createTask", $postData);
 
         if ($submitResult == false) {
-            $this->debout("API error", "red");
-            return false;
+            $this->log('AntiCaptcha - API error', LogLevel::ERROR);
+            throw new TaskCreationFailedException('API error');
+        }
+        if ($submitResult->errorId != 0) {
+            $this->log("AntiCaptcha - API error {$submitResult->errorCode} : {$submitResult->errorDescription}", LogLevel::ERROR);
+            throw new TaskCreationFailedException($submitResult->errorDescription);
         }
 
-        if ($submitResult->errorId == 0) {
-            $this->taskId = $submitResult->taskId;
-            $this->debout("created task with ID {$this->taskId}", "yellow");
-            return true;
-        } else {
-            $this->debout("API error {$submitResult->errorCode} : {$submitResult->errorDescription}", "red");
-            $this->setErrorMessage($submitResult->errorDescription);
-            return false;
-        }
-
+        $this->taskId = $submitResult->taskId;
+        $this->log("AntiCaptcha - created task with ID {$this->taskId}", LogLevel::INFO);
     }
 
-    public function waitForResult($maxSeconds = 300, $currentSecond = 0)
+    /**
+     * @param int $currentSecond
+     * @throws BreakFailedException
+     */
+    protected function waitForResult($currentSecond = 0)
     {
-        $postData = array(
+        $postData = [
             "clientKey" => $this->clientKey,
-            "taskId" => $this->taskId
-        );
+            "taskId"    => $this->taskId,
+        ];
+
         if ($currentSecond == 0) {
-            $this->debout("waiting 5 seconds..");
-            sleep(3);
+            $this->log('AntiCaptcha - waiting 3 seconds...', LogLevel::INFO);
+            $this->sleep(3);
         } else {
-            sleep(1);
+            $this->log('AntiCaptcha - waiting 1 second...', LogLevel::INFO);
+            $this->sleep(1);
         }
-        $this->debout("requesting task status");
-        $postResult = $this->jsonPostRequest("getTaskResult", $postData);
+
+        $this->log('AntiCaptcha - requesting task status', LogLevel::INFO);
+        $postResult = $this->request('getTaskResult', $postData);
 
         if ($postResult == false) {
-            $this->debout("API error", "red");
-            return false;
+            $this->log('AntiCaptcha - API error', LogLevel::ERROR);
+            throw new BreakFailedException('API error');
         }
 
         $this->taskInfo = $postResult;
 
-
         if ($this->taskInfo->errorId == 0) {
-            if ($this->taskInfo->status == "processing") {
+            if ($this->taskInfo->status == 'processing') {
+                $this->log('AntiCaptcha - task is still processing', LogLevel::INFO);
 
-                $this->debout("task is still processing");
-                //repeating attempt
-                return $this->waitForResult($maxSeconds, $currentSecond + 1);
-
+                return $this->waitForResult($currentSecond + 1);
             }
-            if ($this->taskInfo->status == "ready") {
-                $this->debout("task is complete", "green");
-                return true;
+            if ($this->taskInfo->status == 'ready') {
+                $this->log('AntiCaptcha - task is complete', LogLevel::INFO);
+                return;
             }
-            $this->setErrorMessage("unknown API status, update your software");
-            return false;
 
-        } else {
-            $this->debout("API error {$this->taskInfo->errorCode} : {$this->taskInfo->errorDescription}", "red");
-            $this->setErrorMessage($this->taskInfo->errorDescription);
-            return false;
+            $this->log('AntiCaptcha - unknown API status, update your software', LogLevel::ERROR);
+            throw new BreakFailedException('Unknown API status, update your software');
         }
+
+        $this->log("AntiCaptcha - API error {$this->taskInfo->errorCode} : {$this->taskInfo->errorDescription}", LogLevel::ERROR);
+        throw new BreakFailedException($this->taskInfo->errorDescription);
     }
 
-    public function getBalance()
+    protected function getBalance(): float
     {
-        $postData = array(
-            "clientKey" => $this->clientKey
-        );
-        $result = $this->jsonPostRequest("getBalance", $postData);
+        $postData = [
+            'clientKey' => $this->clientKey,
+        ];
+
+        $result = $this->request('getBalance', $postData);
+
         if ($result == false) {
-            $this->debout("API error", "red");
-            return false;
+            $this->log('AntiCaptcha - API error', LogLevel::ERROR);
+            throw new BalanceFailedException('API error');
         }
         if ($result->errorId == 0) {
             return $result->balance;
-        } else {
-            return false;
-        }
-    }
-
-    public function jsonPostRequest($methodName, $postData)
-    {
-        if ($this->verboseMode) {
-            echo "making request to {$this->scheme}://{$this->host}/$methodName with following payload:\n";
-            print_r($postData);
         }
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "{$this->scheme}://{$this->host}/$methodName");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_ENCODING, "gzip,deflate");
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-        $postDataEncoded = json_encode($postData);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postDataEncoded);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json; charset=utf-8',
-            'Accept: application/json',
-            'Content-Length: ' . strlen($postDataEncoded)
-        ));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
-        $result = curl_exec($ch);
-        $curlError = curl_error($ch);
-
-        if ($curlError != "") {
-            $this->debout("Network error: $curlError");
-            return false;
-        }
-        curl_close($ch);
-        return json_decode($result);
+        $this->log('AntiCaptcha - unknown API error', LogLevel::ERROR);
+        throw new BalanceFailedException();
     }
 
-    public function setVerboseMode($mode)
+    protected function request($methodName, $postData)
     {
-        $this->verboseMode = $mode;
+        $response = $this->client->post($methodName, [
+            'json' => $postData,
+        ]);
+
+        return json_decode($response->getBody()->getContents());
     }
 
-    public function debout($message, $color = "white")
+    protected function instanceClient(): Client
     {
-        if (!$this->verboseMode) return false;
-        if ($color != "white" and $color != "") {
-            $CLIcolors = array(
-                "cyan" => "0;36",
-                "green" => "0;32",
-                "blue" => "0;34",
-                "red" => "0;31",
-                "yellow" => "1;33"
+        $stack = HandlerStack::create(new CurlHandler());
+
+        if ($this->logger != null) {
+            $stack->push(
+                Middleware::log(
+                    $this->logger,
+                    new MessageFormatter('AntiCaptcha: {uri} {code}')
+                )
             );
-
-            $CLIMsg = "\033[" . $CLIcolors[$color] . "m$message\033[0m";
-
-        } else {
-            $CLIMsg = $message;
         }
-        echo $CLIMsg . "\n";
+
+        return new Client([
+            'base_uri'        => "{$this->scheme}://{$this->host}/",
+            'headers'         => [
+                'Accept-Encoding'           => 'gzip, deflate',
+                'Connection'                => 'keep-alive',
+                'Accept-Charset'            => 'utf-8',
+                'Upgrade-Insecure-Requests' => '1',
+            ],
+            'handler'         => $stack,
+            'cookies'         => true,
+            'allow_redirects' => true,
+            'timeout'         => 30,
+        ]);
     }
 
-    public function setErrorMessage($message)
+    protected function sleep(int $seconds): void
     {
-        $this->errorMessage = $message;
+        sleep($seconds);
     }
 
-    public function getErrorMessage()
+    protected function log(string $message, string $logLevel): void
     {
-        return $this->errorMessage;
-    }
-
-    public function getTaskId()
-    {
-        return $this->taskId;
-    }
-
-    public function setTaskId($taskId)
-    {
-        $this->taskId = $taskId;
-    }
-
-    public function setHost($host)
-    {
-        $this->host = $host;
-    }
-
-    public function setScheme($scheme)
-    {
-        $this->scheme = $scheme;
-    }
-
-    /**
-     * Set client access key, must be 32 bytes long
-     * @param string $key
-     */
-    public function setKey($key)
-    {
-        $this->clientKey = $key;
+        if ($this->logger != null) {
+            $this->logger->log($logLevel, $message);
+        }
     }
 }
