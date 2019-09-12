@@ -9,6 +9,10 @@ use Psr\Log\LoggerInterface;
 
 class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
 {
+    const MIN_SCORE_0_3 = 0.3;
+    const MIN_SCORE_0_7 = 0.7;
+    const MIN_SCORE_0_9 = 0.9;
+
     private $websiteURL;
     private $websiteKey;
     private $pageAction;
@@ -36,19 +40,27 @@ class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
     protected function getPostData()
     {
         return [
-            "type"       => "RecaptchaV3TaskProxyless",
-            "websiteURL" => $this->websiteURL,
-            "websiteKey" => $this->websiteKey,
-            "minScore"   => $this->minScore,
-            "pageAction" => $this->pageAction,
+            'type'       => 'RecaptchaV3TaskProxyless',
+            'websiteURL' => $this->websiteURL,
+            'websiteKey' => $this->websiteKey,
+            'minScore'   => $this->minScore,
+            'pageAction' => $this->pageAction,
         ];
     }
 
+    /**
+     * @return mixed
+     * @codeCoverageIgnore
+     */
     private function getTaskSolution()
     {
         return $this->taskInfo->solution->gRecaptchaResponse;
     }
 
+    /**
+     * {@inheritDoc}
+     * @codeCoverageIgnore
+     */
     public function solve(): string
     {
         $this->createTask();
@@ -59,6 +71,7 @@ class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
 
     /**
      * {@inheritDoc}
+     * @codeCoverageIgnore
      */
     public function balance(): float
     {

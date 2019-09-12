@@ -30,9 +30,14 @@ abstract class AntiCaptcha
      */
     protected $client;
 
+    /**
+     * AntiCaptcha constructor.
+     *
+     * @codeCoverageIgnore
+     */
     public function __construct()
     {
-        $this->client = $this->instanceClient();
+        $this->instanceClient();
     }
 
     abstract protected function getPostData();
@@ -51,12 +56,11 @@ abstract class AntiCaptcha
 
         $submitResult = $this->request("createTask", $postData);
 
-        if ($submitResult == false) {
-            $this->log('AntiCaptcha - API error', LogLevel::ERROR);
-            throw new TaskCreationFailedException('API error');
-        }
         if ($submitResult->errorId != 0) {
-            $this->log("AntiCaptcha - API error {$submitResult->errorCode} : {$submitResult->errorDescription}", LogLevel::ERROR);
+            $this->log(
+                "AntiCaptcha - API error {$submitResult->errorCode} : {$submitResult->errorDescription}",
+                LogLevel::ERROR
+            );
             throw new TaskCreationFailedException($submitResult->errorDescription);
         }
 
@@ -86,30 +90,22 @@ abstract class AntiCaptcha
         $this->log('AntiCaptcha - requesting task status', LogLevel::INFO);
         $postResult = $this->request('getTaskResult', $postData);
 
-        if ($postResult == false) {
-            $this->log('AntiCaptcha - API error', LogLevel::ERROR);
-            throw new BreakFailedException('API error');
-        }
-
         $this->taskInfo = $postResult;
 
-        if ($this->taskInfo->errorId == 0) {
-            if ($this->taskInfo->status == 'processing') {
-                $this->log('AntiCaptcha - task is still processing', LogLevel::INFO);
+        if ($this->taskInfo->errorId != 0) {
+            $this->log(
+                "AntiCaptcha - API error {$this->taskInfo->errorCode} : {$this->taskInfo->errorDescription}",
+                LogLevel::ERROR
+            );
+            throw new BreakFailedException($this->taskInfo->errorDescription);
+        }
+        if ($this->taskInfo->status == 'processing') {
+            $this->log('AntiCaptcha - task is still processing', LogLevel::INFO);
 
-                return $this->waitForResult($currentSecond + 1);
-            }
-            if ($this->taskInfo->status == 'ready') {
-                $this->log('AntiCaptcha - task is complete', LogLevel::INFO);
-                return;
-            }
-
-            $this->log('AntiCaptcha - unknown API status, update your software', LogLevel::ERROR);
-            throw new BreakFailedException('Unknown API status, update your software');
+            return $this->waitForResult($currentSecond + 1);
         }
 
-        $this->log("AntiCaptcha - API error {$this->taskInfo->errorCode} : {$this->taskInfo->errorDescription}", LogLevel::ERROR);
-        throw new BreakFailedException($this->taskInfo->errorDescription);
+        $this->log('AntiCaptcha - task is complete', LogLevel::INFO);
     }
 
     protected function getBalance(): float
@@ -118,18 +114,31 @@ abstract class AntiCaptcha
             'clientKey' => $this->clientKey,
         ];
 
-        $result = $this->request('getBalance', $postData);
+        $response = $this->request('getBalance', $postData);
 
-        if ($result == false) {
-            $this->log('AntiCaptcha - API error', LogLevel::ERROR);
-            throw new BalanceFailedException('API error');
-        }
-        if ($result->errorId == 0) {
-            return $result->balance;
+        if ($response->errorId == 0) {
+            return $response->balance;
         }
 
         $this->log('AntiCaptcha - unknown API error', LogLevel::ERROR);
         throw new BalanceFailedException();
+    }
+
+    protected function reportIncorrect(int $taskId, bool $image): bool
+    {
+        $postData = [
+            'clientKey' => $this->clientKey,
+            'taskId'    => $taskId,
+        ];
+
+        $response = $this->request($image ? 'reportIncorrectImageCaptcha' : 'reportIncorrectRecaptcha', $postData);
+
+        $this->log(
+            'AntiCaptcha - ' . ($response->errorId == 0 ? 'complaint accepted' : 'captcha not found or expired'),
+            LogLevel::INFO
+        );
+
+        return $response->errorId == 0;
     }
 
     protected function request($methodName, $postData)
@@ -141,9 +150,20 @@ abstract class AntiCaptcha
         return json_decode($response->getBody()->getContents());
     }
 
-    protected function instanceClient(): Client
+    /**
+     * @return CurlHandler
+     * @codeCoverageIgnore
+     */
+    protected function getClientHandler()
     {
-        $stack = HandlerStack::create(new CurlHandler());
+        return new CurlHandler();
+    }
+
+    protected function instanceClient(): void
+    {
+        $handler = $this->getClientHandler();
+
+        $stack = HandlerStack::create($handler);
 
         if ($this->logger != null) {
             $stack->push(
@@ -154,7 +174,7 @@ abstract class AntiCaptcha
             );
         }
 
-        return new Client([
+        $this->client = new Client([
             'base_uri'        => "{$this->scheme}://{$this->host}/",
             'headers'         => [
                 'Accept-Encoding'           => 'gzip, deflate',
@@ -169,6 +189,10 @@ abstract class AntiCaptcha
         ]);
     }
 
+    /**
+     * @param int $seconds
+     * @codeCoverageIgnore
+     */
     protected function sleep(int $seconds): void
     {
         sleep($seconds);
@@ -179,5 +203,15 @@ abstract class AntiCaptcha
         if ($this->logger != null) {
             $this->logger->log($logLevel, $message);
         }
+    }
+
+    protected function getTaskId()
+    {
+        return $this->taskId;
+    }
+
+    protected function getTaskInfo()
+    {
+        return $this->taskInfo;
     }
 }

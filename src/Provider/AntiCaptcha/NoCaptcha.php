@@ -36,6 +36,7 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
      * @param string $proxyPassword
      * @param string $proxyType
      * @param string $cookies
+     * @param string $websiteSToken
      *
      * @SuppressWarnings("PHPMD.ExcessiveParameterList")
      */
@@ -49,7 +50,8 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
         string $proxyLogin = '',
         string $proxyPassword = '',
         string $proxyType = 'http',
-        string $cookies = ''
+        string $cookies = '',
+        string $websiteSToken = ''
     ) {
         $this->clientKey  = $clientKey;
         $this->websiteURL = $websiteURL;
@@ -62,6 +64,7 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
         $this->proxyPassword = $proxyPassword;
         $this->proxyType     = $proxyType;
         $this->cookies       = $cookies;
+        $this->websiteSToken = $websiteSToken;
 
         parent::__construct();
     }
@@ -69,19 +72,23 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
     protected function getPostData(): array
     {
         return [
-            "type"          => empty($this->proxyAddress) ? "NoCaptchaTaskProxyless" : "NoCaptchaTask",
-            "websiteURL"    => $this->websiteURL,
-            "websiteKey"    => $this->websiteKey,
-            "websiteSToken" => $this->websiteSToken,
-            "proxyType"     => $this->proxyType,
-            "proxyAddress"  => $this->proxyAddress,
-            "proxyPort"     => $this->proxyPort,
-            "proxyLogin"    => $this->proxyLogin,
-            "proxyPassword" => $this->proxyPassword,
-            "cookies"       => $this->cookies,
+            'type'          => empty($this->proxyAddress) ? 'NoCaptchaTaskProxyless' : 'NoCaptchaTask',
+            'websiteURL'    => $this->websiteURL,
+            'websiteKey'    => $this->websiteKey,
+            'websiteSToken' => $this->websiteSToken,
+            'proxyType'     => $this->proxyType,
+            'proxyAddress'  => $this->proxyAddress,
+            'proxyPort'     => $this->proxyPort,
+            'proxyLogin'    => $this->proxyLogin,
+            'proxyPassword' => $this->proxyPassword,
+            'cookies'       => $this->cookies,
         ];
     }
 
+    /**
+     * @return string
+     * @codeCoverageIgnore
+     */
     protected function getTaskSolution(): string
     {
         return $this->taskInfo->solution->gRecaptchaResponse;
@@ -89,6 +96,7 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
 
     /**
      * {@inheritDoc}
+     * @codeCoverageIgnore
      */
     public function solve(): string
     {
@@ -100,9 +108,22 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
 
     /**
      * {@inheritDoc}
+     * @codeCoverageIgnore
      */
     public function balance(): float
     {
         return $this->getBalance();
+    }
+
+    /**
+     * Send complaint on an Recaptcha
+     *
+     * @param int $taskId
+     * @return bool
+     * @codeCoverageIgnore
+     */
+    public function reportIncorrectImageCaptcha(int $taskId): bool
+    {
+        return $this->reportIncorrect($taskId, false);
     }
 }

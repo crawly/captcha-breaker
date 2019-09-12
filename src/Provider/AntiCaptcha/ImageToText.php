@@ -7,6 +7,7 @@ use Crawly\CaptchaBreaker\Exception\BreakFailedException;
 use Crawly\CaptchaBreaker\Exception\SetupFailedException;
 use Crawly\CaptchaBreaker\Exception\TaskCreationFailedException;
 use Crawly\CaptchaBreaker\Provider\ProviderInterface;
+use GuzzleHttp\Handler\CurlHandler;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -53,17 +54,21 @@ class ImageToText extends AntiCaptcha implements ProviderInterface
     protected function getPostData(): array
     {
         return [
-            "type"      => "ImageToTextTask",
-            "body"      => $this->base64Image,
-            "phrase"    => $this->phrase,
-            "case"      => $this->case,
-            "numeric"   => $this->numeric,
-            "math"      => $this->math,
-            "minLength" => $this->minLength,
-            "maxLength" => $this->maxLength,
+            'type'      => 'ImageToTextTask',
+            'body'      => $this->base64Image,
+            'phrase'    => $this->phrase,
+            'case'      => $this->case,
+            'numeric'   => $this->numeric,
+            'math'      => $this->math,
+            'minLength' => $this->minLength,
+            'maxLength' => $this->maxLength,
         ];
     }
 
+    /**
+     * @return string
+     * @codeCoverageIgnore
+     */
     protected function getTaskSolution(): string
     {
         return $this->taskInfo->solution->text;
@@ -71,6 +76,7 @@ class ImageToText extends AntiCaptcha implements ProviderInterface
 
     /**
      * {@inheritDoc}
+     * @codeCoverageIgnore
      */
     public function solve(): string
     {
@@ -82,9 +88,22 @@ class ImageToText extends AntiCaptcha implements ProviderInterface
 
     /**
      * {@inheritDoc}
+     * @codeCoverageIgnore
      */
     public function balance(): float
     {
         return $this->getBalance();
+    }
+
+    /**
+     * Send complaint on an image captcha
+     *
+     * @param int $taskId
+     * @return bool
+     * @codeCoverageIgnore
+     */
+    public function reportIncorrectImageCaptcha(int $taskId): bool
+    {
+        return $this->reportIncorrect($taskId, true);
     }
 }

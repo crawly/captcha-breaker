@@ -21,7 +21,8 @@
   },
   "autoload": {
     "psr-4": {
-      "Crawly\\CaptchaBreaker\\": "src/"
+      "Crawly\\CaptchaBreaker\\": "src/",
+      "Crawly\\CaptchaBreaker\\Test\\": "tests/"
     }
   },
   "require-dev": {
