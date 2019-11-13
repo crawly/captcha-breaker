@@ -69,40 +69,39 @@ abstract class AntiCaptcha
     }
 
     /**
-     * @param int $currentSecond
      * @throws BreakFailedException
      */
-    protected function waitForResult($currentSecond = 0)
+    protected function waitForResult()
     {
         $postData = [
             "clientKey" => $this->clientKey,
             "taskId"    => $this->taskId,
         ];
 
-        if ($currentSecond == 0) {
-            $this->log('AntiCaptcha - waiting 3 seconds...', LogLevel::INFO);
-            $this->sleep(3);
-        } else {
-            $this->log('AntiCaptcha - waiting 1 second...', LogLevel::INFO);
-            $this->sleep(1);
-        }
+        $this->log('AntiCaptcha - waiting 3 seconds...', LogLevel::INFO);
+        $this->sleep(3);
 
-        $this->log('AntiCaptcha - requesting task status', LogLevel::INFO);
-        $postResult = $this->request('getTaskResult', $postData);
+        for (; ;) {
+            $this->log('AntiCaptcha - requesting task status', LogLevel::INFO);
+            $postResult = $this->request('getTaskResult', $postData);
 
-        $this->taskInfo = $postResult;
+            $this->taskInfo = $postResult;
 
-        if ($this->taskInfo->errorId != 0) {
-            $this->log(
-                "AntiCaptcha - API error {$this->taskInfo->errorCode} : {$this->taskInfo->errorDescription}",
-                LogLevel::ERROR
-            );
-            throw new BreakFailedException($this->taskInfo->errorDescription);
-        }
-        if ($this->taskInfo->status == 'processing') {
-            $this->log('AntiCaptcha - task is still processing', LogLevel::INFO);
+            if ($this->taskInfo->errorId != 0) {
+                $this->log(
+                    "AntiCaptcha - API error {$this->taskInfo->errorCode} : {$this->taskInfo->errorDescription}",
+                    LogLevel::ERROR
+                );
+                throw new BreakFailedException($this->taskInfo->errorDescription);
+            }
+            if ($this->taskInfo->status == 'processing') {
+                $this->log('AntiCaptcha - task is still processing', LogLevel::INFO);
+                $this->log('AntiCaptcha - waiting 1 second...', LogLevel::INFO);
+                $this->sleep(1);
+                continue;
+            }
 
-            return $this->waitForResult($currentSecond + 1);
+            break;
         }
 
         $this->log('AntiCaptcha - task is complete', LogLevel::INFO);

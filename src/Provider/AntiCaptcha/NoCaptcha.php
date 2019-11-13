@@ -118,12 +118,11 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
     /**
      * Send complaint on an Recaptcha
      *
-     * @param int $taskId
      * @return bool
      * @codeCoverageIgnore
      */
-    public function reportIncorrectImageCaptcha(int $taskId): bool
+    public function reportIncorrectCaptcha(): bool
     {
-        return $this->reportIncorrect($taskId, false);
+        return $this->reportIncorrect($this->getTaskId(), false);
     }
 }

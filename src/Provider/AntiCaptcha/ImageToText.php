@@ -98,12 +98,11 @@ class ImageToText extends AntiCaptcha implements ProviderInterface
     /**
      * Send complaint on an image captcha
      *
-     * @param int $taskId
      * @return bool
      * @codeCoverageIgnore
      */
-    public function reportIncorrectImageCaptcha(int $taskId): bool
+    public function reportIncorrectCaptcha(): bool
     {
-        return $this->reportIncorrect($taskId, true);
+        return $this->reportIncorrect($this->getTaskId(), true);
     }
 }
