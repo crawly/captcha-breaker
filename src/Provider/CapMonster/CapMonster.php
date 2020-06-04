@@ -31,7 +31,7 @@ abstract class CapMonster
     protected $client;
 
     /**
-     * AntiCaptcha constructor.
+     * CapMonster constructor.
      *
      * @codeCoverageIgnore
      */
@@ -58,14 +58,14 @@ abstract class CapMonster
 
         if ($submitResult->errorId != 0) {
             $this->log(
-                "AntiCaptcha - API error {$submitResult->errorCode} : {$submitResult->errorDescription}",
+                "CapMonster - API error {$submitResult->errorCode} : {$submitResult->errorDescription}",
                 LogLevel::ERROR
             );
             throw new TaskCreationFailedException($submitResult->errorDescription);
         }
 
         $this->taskId = $submitResult->taskId;
-        $this->log("AntiCaptcha - created task with ID {$this->taskId}", LogLevel::INFO);
+        $this->log("CapMonster - created task with ID {$this->taskId}", LogLevel::INFO);
     }
 
     /**
@@ -78,25 +78,25 @@ abstract class CapMonster
             "taskId"    => $this->taskId,
         ];
 
-        $this->log('AntiCaptcha - waiting 3 seconds...', LogLevel::INFO);
+        $this->log('CapMonster - waiting 3 seconds...', LogLevel::INFO);
         $this->sleep(3);
 
         for (; ;) {
-            $this->log('AntiCaptcha - requesting task status', LogLevel::INFO);
+            $this->log('CapMonster - requesting task status', LogLevel::INFO);
             $postResult = $this->request('getTaskResult', $postData);
 
             $this->taskInfo = $postResult;
 
             if ($this->taskInfo->errorId != 0) {
                 $this->log(
-                    "AntiCaptcha - API error {$this->taskInfo->errorCode} : {$this->taskInfo->errorDescription}",
+                    "CapMonster - API error {$this->taskInfo->errorCode} : {$this->taskInfo->errorDescription}",
                     LogLevel::ERROR
                 );
                 throw new BreakFailedException($this->taskInfo->errorDescription);
             }
             if ($this->taskInfo->status == 'processing') {
-                $this->log('AntiCaptcha - task is still processing', LogLevel::INFO);
-                $this->log('AntiCaptcha - waiting 1 second...', LogLevel::INFO);
+                $this->log('CapMonster - task is still processing', LogLevel::INFO);
+                $this->log('CapMonster - waiting 1 second...', LogLevel::INFO);
                 $this->sleep(1);
                 continue;
             }
@@ -104,7 +104,8 @@ abstract class CapMonster
             break;
         }
 
-        $this->log('AntiCaptcha - task is complete', LogLevel::INFO);
+        $this->log('CapMonster - task is complete', LogLevel::INFO);
+        $this->log('CapMonster - task is complete', LogLevel::INFO);
     }
 
     protected function getBalance(): float
@@ -119,7 +120,7 @@ abstract class CapMonster
             return $response->balance;
         }
 
-        $this->log('AntiCaptcha - unknown API error', LogLevel::ERROR);
+        $this->log('CapMonster - unknown API error', LogLevel::ERROR);
         throw new BalanceFailedException();
     }
 
@@ -133,7 +134,7 @@ abstract class CapMonster
         $response = $this->request($image ? 'reportIncorrectImageCaptcha' : 'reportIncorrectRecaptcha', $postData);
 
         $this->log(
-            'AntiCaptcha - ' . ($response->errorId == 0 ? 'complaint accepted' : 'captcha not found or expired'),
+            'CapMonster - ' . ($response->errorId == 0 ? 'complaint accepted' : 'captcha not found or expired'),
             LogLevel::INFO
         );
 
@@ -168,7 +169,7 @@ abstract class CapMonster
             $stack->push(
                 Middleware::log(
                     $this->logger,
-                    new MessageFormatter('AntiCaptcha: {uri} {code}')
+                    new MessageFormatter('CapMonster: {uri} {code}')
                 )
             );
         }
