@@ -16,7 +16,7 @@ use Psr\Log\LogLevel;
 
 abstract class CapMonster
 {
-    private $host = '159.69.49.144';
+    private $host = 'api.capmonster.cloud';
     private $scheme = 'https';
     protected $clientKey;
     private $taskId;
