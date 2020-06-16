@@ -4,6 +4,7 @@ Lib for captcha break
 
 Supported providers:
 * [AntiCaptcha](https://anti-captcha.com/)
+* [CapMonster](https://capmonster.cloud/)
 
 ## Install
 `composer require crawly/captcha-breaker`

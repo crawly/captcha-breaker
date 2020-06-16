@@ -105,7 +105,6 @@ abstract class CapMonster
         }
 
         $this->log('CapMonster - task is complete', LogLevel::INFO);
-        $this->log('CapMonster - task is complete', LogLevel::INFO);
     }
 
     protected function getBalance(): float
