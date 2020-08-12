@@ -6,7 +6,9 @@ use Crawly\CaptchaBreaker\Exception\BalanceFailedException;
 use Crawly\CaptchaBreaker\Exception\BreakFailedException;
 use Crawly\CaptchaBreaker\Exception\TaskCreationFailedException;
 use Crawly\CaptchaBreaker\Provider\AntiCaptcha\AntiCaptcha;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -127,6 +129,28 @@ class AntiCaptchaTest extends TestCase
         $this->assertEquals("deditur", $taskInfo->solution->text);
     }
 
+    public function testWaitForResultProcessingRetry()
+    {
+        $mockHandler = new MockHandler();
+        $mockHandler->append(new Response(200, [], $this->mockTaskResultProcessing()));
+        $mockHandler->append(new ConnectException("", new Request('GET', 'test')));
+        $mockHandler->append(new Response(200, [], $this->mockTaskResult()));
+
+        $antiCaptcha = $this->mock($mockHandler);
+
+        $stub           = $this->getAntiCaptchaReflection();
+        $instanceClient = $this->instanceClientMethod($stub);
+        $waitForResult  = $this->waitForResultMethod($stub);
+        $getTaskInfo    = $this->getTaskInfoMethod($stub);
+
+        $instanceClient->invoke($antiCaptcha);
+        $waitForResult->invoke($antiCaptcha);
+
+        $taskInfo = $getTaskInfo->invoke($antiCaptcha);
+
+        $this->assertEquals("deditur", $taskInfo->solution->text);
+    }
+
     public function testWaitForResultError()
     {
         $mockHandler = new MockHandler();
@@ -201,6 +225,7 @@ class AntiCaptchaTest extends TestCase
         $mock = $this->getMockBuilder(AntiCaptcha::class)->onlyMethods([
             'getClientHandler',
             'sleep',
+            'getRetryDelaySeconds',
         ])->disableOriginalConstructor()->getMockForAbstractClass();
         $mock->method('sleep');
         $mock->method('getClientHandler')
@@ -216,6 +241,7 @@ class AntiCaptchaTest extends TestCase
                 "minLength" => 0,
                 "maxLength" => 0,
             ]);
+        $mock->method('getRetryDelaySeconds')->willReturn(0);
 
         return $mock;
     }

@@ -17,7 +17,9 @@
     "php": ">=7.2",
     "ext-curl": "*",
     "psr/log": "^1.1",
-    "guzzlehttp/guzzle": "^6.3"
+    "guzzlehttp/guzzle": "^6.3",
+    "caseyamcl/guzzle_retry_middleware": "^2.3",
+    "ext-json": "*"
   },
   "autoload": {
     "psr-4": {
