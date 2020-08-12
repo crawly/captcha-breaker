@@ -4,7 +4,7 @@
 namespace Crawly\CaptchaBreaker\Test\CapMonster;
 
 
-use Crawly\CaptchaBreaker\Provider\AntiCaptcha\ImageToText;
+use Crawly\CaptchaBreaker\Provider\CapMonster\ImageToText;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 

@@ -4,7 +4,7 @@
 namespace Crawly\CaptchaBreaker\Test\CapMonster;
 
 
-use Crawly\CaptchaBreaker\Provider\AntiCaptcha\NoCaptcha;
+use Crawly\CaptchaBreaker\Provider\CapMonster\NoCaptcha;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 

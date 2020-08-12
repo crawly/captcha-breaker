@@ -6,25 +6,18 @@ namespace Crawly\CaptchaBreaker\Provider\CapMonster;
 use Crawly\CaptchaBreaker\Exception\BalanceFailedException;
 use Crawly\CaptchaBreaker\Exception\BreakFailedException;
 use Crawly\CaptchaBreaker\Exception\TaskCreationFailedException;
+use Crawly\CaptchaBreaker\Provider\Provider;
 use GuzzleHttp\Client;
-use GuzzleHttp\Handler\CurlHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\MessageFormatter;
-use GuzzleHttp\Middleware;
-use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 
-abstract class CapMonster
+abstract class CapMonster extends Provider
 {
-    private $host = 'api.capmonster.cloud';
+    private $host   = 'api.capmonster.cloud';
     private $scheme = 'https';
     protected $clientKey;
     private $taskId;
     protected $taskInfo;
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger = null;
+
     /**
      * @var Client
      */
@@ -142,50 +135,11 @@ abstract class CapMonster
 
     protected function request($methodName, $postData)
     {
-        $response = $this->client->post($methodName, [
+        $response = $this->client->post("{$this->scheme}://{$this->host}/{$methodName}", [
             'json' => $postData,
         ]);
 
         return json_decode($response->getBody()->getContents());
-    }
-
-    /**
-     * @return CurlHandler
-     * @codeCoverageIgnore
-     */
-    protected function getClientHandler()
-    {
-        return new CurlHandler();
-    }
-
-    protected function instanceClient(): void
-    {
-        $handler = $this->getClientHandler();
-
-        $stack = HandlerStack::create($handler);
-
-        if ($this->logger != null) {
-            $stack->push(
-                Middleware::log(
-                    $this->logger,
-                    new MessageFormatter('CapMonster: {uri} {code}')
-                )
-            );
-        }
-
-        $this->client = new Client([
-            'base_uri'        => "{$this->scheme}://{$this->host}/",
-            'headers'         => [
-                'Accept-Encoding'           => 'gzip, deflate',
-                'Connection'                => 'keep-alive',
-                'Accept-Charset'            => 'utf-8',
-                'Upgrade-Insecure-Requests' => '1',
-            ],
-            'handler'         => $stack,
-            'cookies'         => true,
-            'allow_redirects' => true,
-            'timeout'         => 30,
-        ]);
     }
 
     /**
