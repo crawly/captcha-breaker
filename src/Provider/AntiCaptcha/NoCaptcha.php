@@ -23,6 +23,7 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
     protected $proxyLogin;
     protected $proxyPassword;
     protected $cookies;
+    protected $isInvisible;
 
     /**
      * NoCaptcha constructor.
@@ -51,7 +52,8 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
         string $proxyPassword = '',
         string $proxyType = 'http',
         string $cookies = '',
-        string $websiteSToken = ''
+        string $websiteSToken = '',
+        bool $isInvisible = false
     ) {
         $this->clientKey  = $clientKey;
         $this->websiteURL = $websiteURL;
@@ -65,6 +67,7 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
         $this->proxyType     = $proxyType;
         $this->cookies       = $cookies;
         $this->websiteSToken = $websiteSToken;
+        $this->isInvisible   = $isInvisible;
 
         parent::__construct();
     }
@@ -82,6 +85,7 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
             'proxyLogin'    => $this->proxyLogin,
             'proxyPassword' => $this->proxyPassword,
             'cookies'       => $this->cookies,
+            'isInvisible'   => $this->isInvisible,
         ];
     }
 

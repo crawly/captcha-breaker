@@ -31,6 +31,7 @@ class NoCaptchaTest extends TestCase
         $this->assertEquals('', $postData['proxyPassword']);
         $this->assertEquals('', $postData['cookies']);
         $this->assertEquals('', $postData['websiteSToken']);
+        $this->assertEquals(false, $postData['isInvisible']);
     }
 
     public function testGetPostDataWithAllParams()
@@ -47,6 +48,7 @@ class NoCaptchaTest extends TestCase
             'proxy-type',
             'cookies',
             'website-stoken',
+            true,
         ])->getMock();
 
         $stub = $this->getNoCaptchaReflection();
@@ -65,6 +67,7 @@ class NoCaptchaTest extends TestCase
         $this->assertEquals('proxy-password', $postData['proxyPassword']);
         $this->assertEquals('cookies', $postData['cookies']);
         $this->assertEquals('website-stoken', $postData['websiteSToken']);
+        $this->assertEquals(true, $postData['isInvisible']);
     }
 
     protected function getNoCaptchaReflection(): ReflectionClass
