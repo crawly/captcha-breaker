@@ -17,7 +17,7 @@
     "php": ">=7.2",
     "ext-curl": "*",
     "psr/log": "^1.1",
-    "guzzlehttp/guzzle": "^6.3",
+    "guzzlehttp/guzzle": "^6.3 || ^7.4",
     "caseyamcl/guzzle_retry_middleware": "^2.3",
     "ext-json": "*"
   },
@@ -28,24 +28,10 @@
     }
   },
   "require-dev": {
-    "phpunit/phpunit": "^8.3",
-    "phpmd/phpmd": "^2.7",
-    "phpstan/phpstan": "^0.11.15",
-    "sebastian/phpcpd": "^4.1",
-    "friendsofphp/php-cs-fixer": "^2.15"
+    "phpunit/phpunit": "^8.3"
   },
   "scripts": {
-    "phpcs": "php-cs-fixer fix src/",
-    "phpcpd": "phpcpd --verbose src/",
-    "phpmd": "phpmd src/ text codesize,unusedcode,design,phpmd-ruleset.xml",
-    "phpstan": "phpstan analyse -l 4 src/ tests/",
     "coverage": "phpunit --whitelist src/ --coverage-html cover/ --coverage-text",
-    "test": "phpunit",
-    "analysis": [
-      "@phpcs",
-      "@phpcpd",
-      "@phpmd",
-      "@phpstan"
-    ]
+    "test": "phpunit"
   }
 }
