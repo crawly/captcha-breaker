@@ -127,6 +127,6 @@ class NoCaptcha extends AntiCaptcha implements ProviderInterface
      */
     public function reportIncorrectCaptcha(): bool
     {
-        return $this->reportIncorrect($this->getTaskId(), false);
+        return $this->reportIncorrect($this->getTaskId());
     }
 }

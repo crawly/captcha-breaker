@@ -21,6 +21,7 @@ abstract class Provider
      * @var LoggerInterface
      */
     protected $logger = null;
+    protected $providerName = '';
 
     /**
      * @return CurlHandler
@@ -42,7 +43,7 @@ abstract class Provider
             $stack->push(
                 Middleware::log(
                     $this->logger,
-                    new MessageFormatter('CapMonster: {uri} {code}')
+                    new MessageFormatter("{$this->providerName}: {uri} {code}")
                 )
             );
         }

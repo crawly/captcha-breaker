@@ -92,4 +92,15 @@ class HCaptcha extends AntiCaptcha implements ProviderInterface
     {
         return $this->getBalance();
     }
+
+    /**
+     * Send complaint on an Recaptcha
+     *
+     * @return bool
+     * @codeCoverageIgnore
+     */
+    public function reportIncorrectCaptcha(): bool
+    {
+        return $this->reportIncorrect($this->getTaskId());
+    }
 }

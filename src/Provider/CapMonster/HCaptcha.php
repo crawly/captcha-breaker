@@ -92,4 +92,15 @@ class HCaptcha extends CapMonster implements ProviderInterface
     {
         return $this->getBalance();
     }
+
+    /**
+     * Send complaint on an image captcha
+     *
+     * @return bool
+     * @codeCoverageIgnore
+     */
+    public function reportIncorrectCaptcha(): bool
+    {
+        return $this->reportIncorrect($this->getTaskId());
+    }
 }

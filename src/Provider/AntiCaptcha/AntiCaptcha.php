@@ -13,10 +13,10 @@ use Psr\Log\LogLevel;
 
 abstract class AntiCaptcha extends Provider
 {
-    private $host = 'api.anti-captcha.com';
-    private $scheme = 'https';
+    private   $host   = 'api.anti-captcha.com';
+    private   $scheme = 'https';
     protected $clientKey;
-    private $taskId;
+    private   $taskId;
     protected $taskInfo;
     /**
      * @var LoggerInterface
@@ -34,6 +34,7 @@ abstract class AntiCaptcha extends Provider
      */
     public function __construct()
     {
+        $this->providerName = 'CapMonster';
         $this->instanceClient();
     }
 
@@ -55,14 +56,14 @@ abstract class AntiCaptcha extends Provider
 
         if ($submitResult->errorId != 0) {
             $this->log(
-                "AntiCaptcha - API error {$submitResult->errorCode} : {$submitResult->errorDescription}",
+                "{$this->providerName} - API error {$submitResult->errorCode} : {$submitResult->errorDescription}",
                 LogLevel::ERROR
             );
             throw new TaskCreationFailedException($submitResult->errorDescription);
         }
 
         $this->taskId = $submitResult->taskId;
-        $this->log("AntiCaptcha - created task with ID {$this->taskId}", LogLevel::INFO);
+        $this->log("{$this->providerName} - created task with ID {$this->taskId}", LogLevel::INFO);
     }
 
     /**
@@ -75,25 +76,25 @@ abstract class AntiCaptcha extends Provider
             "taskId"    => $this->taskId,
         ];
 
-        $this->log('AntiCaptcha - waiting 3 seconds...', LogLevel::INFO);
+        $this->log("{$this->providerName} - waiting 3 seconds...", LogLevel::INFO);
         $this->sleep(3);
 
         for (; ;) {
-            $this->log('AntiCaptcha - requesting task status', LogLevel::INFO);
+            $this->log("{$this->providerName} - requesting task status", LogLevel::INFO);
             $postResult = $this->request('getTaskResult', $postData);
 
             $this->taskInfo = $postResult;
 
             if ($this->taskInfo->errorId != 0) {
                 $this->log(
-                    "AntiCaptcha - API error {$this->taskInfo->errorCode} : {$this->taskInfo->errorDescription}",
+                    "{$this->providerName} - API error {$this->taskInfo->errorCode} : {$this->taskInfo->errorDescription}",
                     LogLevel::ERROR
                 );
                 throw new BreakFailedException($this->taskInfo->errorDescription);
             }
             if ($this->taskInfo->status == 'processing') {
-                $this->log('AntiCaptcha - task is still processing', LogLevel::INFO);
-                $this->log('AntiCaptcha - waiting 1 second...', LogLevel::INFO);
+                $this->log("{$this->providerName} - task is still processing", LogLevel::INFO);
+                $this->log("{$this->providerName} - waiting 1 second...", LogLevel::INFO);
                 $this->sleep(1);
                 continue;
             }
@@ -101,7 +102,7 @@ abstract class AntiCaptcha extends Provider
             break;
         }
 
-        $this->log('AntiCaptcha - task is complete', LogLevel::INFO);
+        $this->log("{$this->providerName} - task is complete", LogLevel::INFO);
     }
 
     protected function getBalance(): float
@@ -116,21 +117,36 @@ abstract class AntiCaptcha extends Provider
             return $response->balance;
         }
 
-        $this->log('AntiCaptcha - unknown API error', LogLevel::ERROR);
+        $this->log("{$this->providerName} - unknown API error", LogLevel::ERROR);
         throw new BalanceFailedException();
     }
 
-    protected function reportIncorrect(int $taskId, bool $image): bool
+    protected function reportIncorrect(int $taskId): bool
     {
         $postData = [
             'clientKey' => $this->clientKey,
             'taskId'    => $taskId,
         ];
 
-        $response = $this->request($image ? 'reportIncorrectImageCaptcha' : 'reportIncorrectRecaptcha', $postData);
+        $type             = $this->getPostData()['type'];
+        $reportMethodName = '';
+
+        if (in_array($type, ['HCaptchaTaskProxyless', 'HCaptchaTask'])) {
+            $reportMethodName = 'reportIncorrectHcaptcha';
+        } else if (in_array($type, ['NoCaptchaTaskProxyless', 'NoCaptchaTask', 'RecaptchaV3TaskProxyless'])) {
+            $reportMethodName = 'reportIncorrectRecaptcha';
+        } else if ($type == 'ImageToTextTask') {
+            $reportMethodName = 'reportIncorrectImageCaptcha';
+        }
+
+        if (empty($reportMethodName)) {
+            return false;
+        }
+
+        $response = $this->request($reportMethodName, $postData);
 
         $this->log(
-            'AntiCaptcha - ' . ($response->errorId == 0 ? 'complaint accepted' : 'captcha not found or expired'),
+            "{$this->providerName} - " . ($response->errorId == 0 ? 'complaint accepted' : 'captcha not found or expired'),
             LogLevel::INFO
         );
 

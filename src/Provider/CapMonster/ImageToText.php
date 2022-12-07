@@ -3,11 +3,7 @@
 
 namespace Crawly\CaptchaBreaker\Provider\CapMonster;
 
-use Crawly\CaptchaBreaker\Exception\BreakFailedException;
-use Crawly\CaptchaBreaker\Exception\SetupFailedException;
-use Crawly\CaptchaBreaker\Exception\TaskCreationFailedException;
 use Crawly\CaptchaBreaker\Provider\ProviderInterface;
-use GuzzleHttp\Handler\CurlHandler;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -103,6 +99,6 @@ class ImageToText extends CapMonster implements ProviderInterface
      */
     public function reportIncorrectCaptcha(): bool
     {
-        return $this->reportIncorrect($this->getTaskId(), true);
+        return $this->reportIncorrect($this->getTaskId());
     }
 }

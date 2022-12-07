@@ -3,7 +3,6 @@
 
 namespace Crawly\CaptchaBreaker\Provider\AntiCaptcha;
 
-use Crawly\CaptchaBreaker\Exception\SetupFailedException;
 use Crawly\CaptchaBreaker\Provider\ProviderInterface;
 use Psr\Log\LoggerInterface;
 
@@ -86,6 +85,6 @@ class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
      */
     public function reportIncorrectCaptcha(): bool
     {
-        return $this->reportIncorrect($this->getTaskId(), false);
+        return $this->reportIncorrect($this->getTaskId());
     }
 }

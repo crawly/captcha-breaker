@@ -3,7 +3,6 @@
 
 namespace Crawly\CaptchaBreaker\Provider\CapMonster;
 
-use Crawly\CaptchaBreaker\Exception\SetupFailedException;
 use Crawly\CaptchaBreaker\Provider\ProviderInterface;
 use Psr\Log\LoggerInterface;
 
@@ -76,5 +75,16 @@ class ReCaptchaV3 extends CapMonster implements ProviderInterface
     public function balance(): float
     {
         return $this->getBalance();
+    }
+
+    /**
+     * Send complaint on an Recaptcha
+     *
+     * @return bool
+     * @codeCoverageIgnore
+     */
+    public function reportIncorrectCaptcha(): bool
+    {
+        return $this->reportIncorrect($this->getTaskId());
     }
 }
