@@ -34,7 +34,7 @@ abstract class AntiCaptcha extends Provider
      */
     public function __construct()
     {
-        $this->providerName = 'CapMonster';
+        $this->providerName = 'AntiCaptcha';
         $this->instanceClient();
     }
 
