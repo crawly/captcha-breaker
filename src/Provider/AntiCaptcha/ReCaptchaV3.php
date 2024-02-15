@@ -15,6 +15,7 @@ class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
     private $websiteURL;
     private $websiteKey;
     private $pageAction;
+    private $isEnterprise;
     private $minScore;
 
     public function __construct(
@@ -23,13 +24,15 @@ class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
         string $websiteKey,
         string $pageAction,
         float $minScore,
+        bool $isEnterprise = false,
         LoggerInterface $logger = null
     ) {
-        $this->clientKey  = $clientKey;
-        $this->websiteURL = $websiteURL;
-        $this->websiteKey = $websiteKey;
-        $this->pageAction = $pageAction;
-        $this->minScore   = $minScore;
+        $this->clientKey    = $clientKey;
+        $this->websiteURL   = $websiteURL;
+        $this->websiteKey   = $websiteKey;
+        $this->pageAction   = $pageAction;
+        $this->minScore     = $minScore;
+        $this->isEnterprise = $isEnterprise;
 
         $this->logger = $logger;
 
@@ -39,11 +42,12 @@ class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
     protected function getPostData()
     {
         return [
-            'type'       => 'RecaptchaV3TaskProxyless',
-            'websiteURL' => $this->websiteURL,
-            'websiteKey' => $this->websiteKey,
-            'minScore'   => $this->minScore,
-            'pageAction' => $this->pageAction,
+            'type'         => 'RecaptchaV3TaskProxyless',
+            'websiteURL'   => $this->websiteURL,
+            'websiteKey'   => $this->websiteKey,
+            'minScore'     => $this->minScore,
+            'pageAction'   => $this->pageAction,
+            'isEnterprise' => $this->isEnterprise,
         ];
     }
 

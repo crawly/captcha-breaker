@@ -12,7 +12,7 @@ class ReCaptchaV3Test extends TestCase
 {
     public function testGetPostData()
     {
-        $noCaptcha = $this->getMockBuilder(ReCaptchaV3::class)->setConstructorArgs(['123', 'url', 'key', 'action', ReCaptchaV3::MIN_SCORE_0_3])->getMock();
+        $noCaptcha = $this->getMockBuilder(ReCaptchaV3::class)->setConstructorArgs(['123', 'url', 'key', 'action', ReCaptchaV3::MIN_SCORE_0_3, true])->getMock();
 
         $stub = $this->getNoCaptchaReflection();
 
@@ -25,6 +25,7 @@ class ReCaptchaV3Test extends TestCase
         $this->assertEquals('key', $postData['websiteKey']);
         $this->assertEquals('action', $postData['pageAction']);
         $this->assertEquals(ReCaptchaV3::MIN_SCORE_0_3, $postData['minScore']);
+        $this->assertEquals('isEnterprise', $postData['isEnterprise']);
     }
 
     protected function getNoCaptchaReflection(): ReflectionClass
