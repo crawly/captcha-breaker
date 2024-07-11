@@ -14,6 +14,7 @@ class Amazon extends CapMonster implements ProviderInterface
     private $iv;
     private $cookieSolution;
     public function __construct(
+        string $clientKey,
         string $websiteURL,
         string $challengeScript,
         string $captchaScript,
@@ -22,6 +23,7 @@ class Amazon extends CapMonster implements ProviderInterface
         string $iv,
         bool $cookieSolution
     ) {
+        $this->clientKey  = $clientKey;
         $this->websiteURL = $websiteURL;
         $this->challengeScript = $challengeScript;
         $this->captchaScript = $captchaScript;
