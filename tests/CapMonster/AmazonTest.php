@@ -12,6 +12,7 @@ class AmazonTest extends TestCase
         // given
         $mock = $this->getMockBuilder(Amazon::class)
             ->setConstructorArgs([
+                'clientKey',
                 'websiteURL phpunit',
                 'challengeScript crawly',
                 'captchaScript phpunit',
