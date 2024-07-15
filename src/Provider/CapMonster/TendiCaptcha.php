@@ -1,82 +1,66 @@
 <?php
 
-
 namespace Crawly\CaptchaBreaker\Provider\CapMonster;
 
+use Crawly\CaptchaBreaker\Exception\DeprecatedMethod;
 use Crawly\CaptchaBreaker\Provider\ProviderInterface;
-use Crawly\CaptchaBreaker\ValueObject\ChallengeResponse;
+use Crawly\CaptchaBreaker\ValueObject\TendiChallengeResponse;
 use Psr\Log\LoggerInterface;
 
-class ReCaptchaV3 extends CapMonster implements ProviderInterface
+class TendiCaptcha extends CapMonster implements ProviderInterface
 {
-    const MIN_SCORE_0_3 = 0.3;
-    const MIN_SCORE_0_7 = 0.7;
-    const MIN_SCORE_0_9 = 0.9;
-
     private $websiteURL;
     private $websiteKey;
-    private $pageAction;
-    private $minScore;
 
     public function __construct(
         string $clientKey,
         string $websiteURL,
         string $websiteKey,
-        string $pageAction,
-        float $minScore,
         LoggerInterface $logger = null
     ) {
         $this->clientKey  = $clientKey;
         $this->websiteURL = $websiteURL;
         $this->websiteKey = $websiteKey;
-        $this->pageAction = $pageAction;
-        $this->minScore   = $minScore;
-
         $this->logger = $logger;
 
         parent::__construct();
     }
 
-    protected function getPostData()
+    protected function getPostData(): array
     {
         return [
-            'type'       => 'RecaptchaV3TaskProxyless',
+            'type'       => 'CustomTask',
+            'class'      => 'TenDI',
             'websiteURL' => $this->websiteURL,
             'websiteKey' => $this->websiteKey,
-            'minScore'   => $this->minScore,
-            'pageAction' => $this->pageAction,
         ];
     }
 
     /**
-     * @return mixed
-     * @codeCoverageIgnore
-     */
-    private function getTaskSolution()
-    {
-        return $this->taskInfo->solution->gRecaptchaResponse;
-    }
-
-    /**
      * {@inheritDoc}
+     * @throws DeprecatedMethod
      * @codeCoverageIgnore
      */
     public function solve(): string
     {
-        return $this->resolveChallenge()
-            ->getResult();
+        throw new DeprecatedMethod(
+            'Method "solve" is deprecated and should not be used, use "resolveChallenge" instead.'
+        );
     }
 
     /**
      * {@inheritDoc}
      * @codeCoverageIgnore
      */
-    public function resolveChallenge(): ChallengeResponse
+    public function resolveChallenge(): TendiChallengeResponse
     {
         $this->createTask();
         $this->waitForResult();
 
-        return new ChallengeResponse($this->getTaskSolution());
+        return new TendiChallengeResponse(
+            $this->taskInfo->solution->data->ticket,
+            $this->taskInfo->solution->data->randstr,
+        );
     }
 
     /**
@@ -89,7 +73,7 @@ class ReCaptchaV3 extends CapMonster implements ProviderInterface
     }
 
     /**
-     * Send complaint on an Recaptcha
+     * Send complaint on an incorrectly solved captcha.
      *
      * @return bool
      * @codeCoverageIgnore

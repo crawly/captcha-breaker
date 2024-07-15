@@ -1,9 +1,9 @@
 <?php
 
-
 namespace Crawly\CaptchaBreaker\Provider\AntiCaptcha;
 
 use Crawly\CaptchaBreaker\Provider\ProviderInterface;
+use Crawly\CaptchaBreaker\ValueObject\ChallengeResponse;
 use Psr\Log\LoggerInterface;
 
 class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
@@ -66,10 +66,20 @@ class ReCaptchaV3 extends AntiCaptcha implements ProviderInterface
      */
     public function solve(): string
     {
+        return $this->resolveChallenge()
+            ->getResult();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @codeCoverageIgnore
+     */
+    public function resolveChallenge(): ChallengeResponse
+    {
         $this->createTask();
         $this->waitForResult();
 
-        return $this->getTaskSolution();
+        return new ChallengeResponse($this->getTaskSolution());
     }
 
     /**

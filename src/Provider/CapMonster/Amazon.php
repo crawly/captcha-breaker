@@ -3,6 +3,7 @@
 namespace Crawly\CaptchaBreaker\Provider\CapMonster;
 
 use Crawly\CaptchaBreaker\Provider\ProviderInterface;
+use Crawly\CaptchaBreaker\ValueObject\ChallengeResponse;
 
 class Amazon extends CapMonster implements ProviderInterface
 {
@@ -48,12 +49,28 @@ class Amazon extends CapMonster implements ProviderInterface
         ];
     }
 
+    /**
+     * {@inheritDoc}
+     * @codeCoverageIgnore
+     */
     public function solve(): string
+    {
+        return $this->resolveChallenge()
+            ->getResult();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @codeCoverageIgnore
+     */
+    public function resolveChallenge(): ChallengeResponse
     {
         $this->createTask();
         $this->waitForResult();
 
-        return $this->taskInfo->solution->cookies->{'aws-waf-token'};
+        return new ChallengeResponse(
+            $this->taskInfo->solution->cookies->{'aws-waf-token'}
+        );
     }
 
     public function balance(): float
