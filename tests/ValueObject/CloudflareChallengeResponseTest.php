@@ -10,22 +10,12 @@ class CloudflareChallengeResponseTest extends TestCase
     public function testGetCloudflareClearance(): void
     {
         $cloudflareChallengeResponse = new CloudflareChallengeResponse(
-            "cloudflare-clearance",
-            "token"
+            "cloudflare-clearance"
         );
         $this->assertEquals(
             "cloudflare-clearance",
             $cloudflareChallengeResponse->getCloudflareClearance()
         );
-    }
-
-    public function testGetToken(): void
-    {
-        $cloudflareChallengeResponse = new CloudflareChallengeResponse(
-            "cloudflare-clearance",
-            "token"
-        );
-        $this->assertEquals("token", $cloudflareChallengeResponse->getToken());
     }
 
     /**
@@ -34,12 +24,11 @@ class CloudflareChallengeResponseTest extends TestCase
     public function validationProvider(): array
     {
         return [
-            ["", "token", "Cloudflare clearance cannot be empty"],
-            ["cloudflare-clearance", "", "Token cannot be empty"],
-            ["", "", "Cloudflare clearance cannot be empty"],
-            [" ", " ", "Cloudflare clearance cannot be empty"],
-            ["\t", "\t", "Cloudflare clearance cannot be empty"],
-            ["\n", "\n", "Cloudflare clearance cannot be empty"],
+            ["", "Cloudflare clearance cannot be empty"],
+            ["", "Cloudflare clearance cannot be empty"],
+            [" ", "Cloudflare clearance cannot be empty"],
+            ["\t", "Cloudflare clearance cannot be empty"],
+            ["\n", "Cloudflare clearance cannot be empty"],
         ];
     }
 
@@ -48,11 +37,10 @@ class CloudflareChallengeResponseTest extends TestCase
      */
     public function testValidation(
         string $cloudflareClearance,
-        string $token,
         string $expectedMessage
     ): void {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage($expectedMessage);
-        new CloudflareChallengeResponse($cloudflareClearance, $token);
+        new CloudflareChallengeResponse($cloudflareClearance);
     }
 }
