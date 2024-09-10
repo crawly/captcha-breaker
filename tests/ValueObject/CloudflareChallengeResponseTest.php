@@ -10,11 +10,17 @@ class CloudflareChallengeResponseTest extends TestCase
     public function testGetCloudflareClearance(): void
     {
         $cloudflareChallengeResponse = new CloudflareChallengeResponse(
-            "cloudflare-clearance"
+            "cloudflare-clearance",
+            "cfuvid"
         );
         $this->assertEquals(
             "cloudflare-clearance",
             $cloudflareChallengeResponse->getCloudflareClearance()
+        );
+
+        $this->assertEquals(
+            "cfuvid",
+            $cloudflareChallengeResponse->getCfuvid()
         );
     }
 
@@ -24,11 +30,20 @@ class CloudflareChallengeResponseTest extends TestCase
     public function validationProvider(): array
     {
         return [
-            ["", "Cloudflare clearance cannot be empty"],
-            ["", "Cloudflare clearance cannot be empty"],
-            [" ", "Cloudflare clearance cannot be empty"],
-            ["\t", "Cloudflare clearance cannot be empty"],
-            ["\n", "Cloudflare clearance cannot be empty"],
+            ["", "", "Cloudflare clearance cannot be empty"],
+            [" ", "", "Cloudflare clearance cannot be empty"],
+            ["\t", "", "Cloudflare clearance cannot be empty"],
+            ["\n", "", "Cloudflare clearance cannot be empty"],
+            ["\r", "", "Cloudflare clearance cannot be empty"],
+            ["\0", "", "Cloudflare clearance cannot be empty"],
+            ["\x0B", "", "Cloudflare clearance cannot be empty"],
+            ["cloudflare-clearance", "", "cfuvid cannot be empty"],
+            ["cloudflare-clearance", " ", "cfuvid cannot be empty"],
+            ["cloudflare-clearance", "\t", "cfuvid cannot be empty"],
+            ["cloudflare-clearance", "\n", "cfuvid cannot be empty"],
+            ["cloudflare-clearance", "\r", "cfuvid cannot be empty"],
+            ["cloudflare-clearance", "\0", "cfuvid cannot be empty"],
+            ["cloudflare-clearance", "\x0B", "cfuvid cannot be empty"],
         ];
     }
 
@@ -37,10 +52,11 @@ class CloudflareChallengeResponseTest extends TestCase
      */
     public function testValidation(
         string $cloudflareClearance,
+        string $cfuvid,
         string $expectedMessage
     ): void {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage($expectedMessage);
-        new CloudflareChallengeResponse($cloudflareClearance);
+        new CloudflareChallengeResponse($cloudflareClearance, $cfuvid);
     }
 }
