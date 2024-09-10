@@ -4,19 +4,14 @@ namespace Crawly\CaptchaBreaker\ValueObject;
 
 class CloudflareChallengeResponse implements ChallengeResponseContract
 {
-    private string $cloudflareClearance;
+    private $cloudflareClearance;
+    private $cfuvid;
 
-    public function __construct(string $cloudflareClearance, string $cfuvid)
+    public function __construct(string $cloudflareClearance, ?string $cfuvid)
     {
         if (empty(trim($cloudflareClearance))) {
             throw new \InvalidArgumentException(
                 "Cloudflare clearance cannot be empty"
-            );
-        }
-
-        if (empty(trim($cfuvid))) {
-            throw new \InvalidArgumentException(
-                "cfuvid cannot be empty"
             );
         }
 
@@ -29,7 +24,7 @@ class CloudflareChallengeResponse implements ChallengeResponseContract
         return $this->cloudflareClearance;
     }
 
-    public function getCfuvid(): string
+    public function getCfuvid(): ?string
     {
         return $this->cfuvid;
     }
