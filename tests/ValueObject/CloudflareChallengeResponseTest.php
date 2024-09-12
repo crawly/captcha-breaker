@@ -37,13 +37,6 @@ class CloudflareChallengeResponseTest extends TestCase
             ["\r", "", "Cloudflare clearance cannot be empty"],
             ["\0", "", "Cloudflare clearance cannot be empty"],
             ["\x0B", "", "Cloudflare clearance cannot be empty"],
-            ["cloudflare-clearance", "", "cfuvid cannot be empty"],
-            ["cloudflare-clearance", " ", "cfuvid cannot be empty"],
-            ["cloudflare-clearance", "\t", "cfuvid cannot be empty"],
-            ["cloudflare-clearance", "\n", "cfuvid cannot be empty"],
-            ["cloudflare-clearance", "\r", "cfuvid cannot be empty"],
-            ["cloudflare-clearance", "\0", "cfuvid cannot be empty"],
-            ["cloudflare-clearance", "\x0B", "cfuvid cannot be empty"],
         ];
     }
 
@@ -58,5 +51,22 @@ class CloudflareChallengeResponseTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage($expectedMessage);
         new CloudflareChallengeResponse($cloudflareClearance, $cfuvid);
+    }
+
+    public function testNullableCfuvidCookie(): void
+    {
+        $cloudflareChallengeResponse = new CloudflareChallengeResponse(
+            "cloudflare-clearance",
+            null
+        );
+        $this->assertEquals(
+            "cloudflare-clearance",
+            $cloudflareChallengeResponse->getCloudflareClearance()
+        );
+
+        $this->assertEquals(
+            null,
+            $cloudflareChallengeResponse->getCfuvid()
+        );
     }
 }

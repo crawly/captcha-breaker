@@ -85,7 +85,7 @@ class CloudflareChallengeWithCookiesCaptcha extends CapMonster implements
 
         return new CloudflareChallengeResponse(
             $this->taskInfo->solution->cf_clearance,
-            $this->taskInfo->solution->_cfuvid
+            $this->taskInfo->solution->_cfuvid ?? null
         );
     }
 
