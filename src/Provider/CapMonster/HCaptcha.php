@@ -18,6 +18,7 @@ class HCaptcha extends CapMonster implements ProviderInterface
     protected $proxyLogin;
     protected $proxyPassword;
     protected $proxyType;
+    protected $isInvisible;
 
     /**
      * @SuppressWarnings("PHPMD.ExcessiveParameterList")
@@ -32,7 +33,8 @@ class HCaptcha extends CapMonster implements ProviderInterface
         string $proxyPort = '',
         string $proxyLogin = '',
         string $proxyPassword = '',
-        string $proxyType = 'http'
+        string $proxyType = 'http',
+        bool $isInvisible = false
     ) {
         $this->clientKey  = $clientKey;
         $this->websiteURL = $websiteURL;
@@ -45,6 +47,7 @@ class HCaptcha extends CapMonster implements ProviderInterface
         $this->proxyLogin    = $proxyLogin;
         $this->proxyPassword = $proxyPassword;
         $this->proxyType     = $proxyType;
+        $this->isInvisible   = $isInvisible;
 
         parent::__construct();
     }
@@ -61,6 +64,7 @@ class HCaptcha extends CapMonster implements ProviderInterface
             'proxyPort'     => $this->proxyPort,
             'proxyLogin'    => $this->proxyLogin,
             'proxyPassword' => $this->proxyPassword,
+            'isInvisible'   => $this->isInvisible,
         ];
     }
 
