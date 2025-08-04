@@ -29,6 +29,7 @@ class HCaptchaTest extends TestCase
         $this->assertEquals('', $postData['proxyPort']);
         $this->assertEquals('', $postData['proxyLogin']);
         $this->assertEquals('', $postData['proxyPassword']);
+        $this->assertEquals(false, $postData['isInvisible']);
     }
 
     public function testGetPostDataWithAllParams()
@@ -61,6 +62,41 @@ class HCaptchaTest extends TestCase
         $this->assertEquals('proxy-port', $postData['proxyPort']);
         $this->assertEquals('proxy-login', $postData['proxyLogin']);
         $this->assertEquals('proxy-password', $postData['proxyPassword']);
+        $this->assertEquals(false, $postData['isInvisible']);
+    }
+
+    public function testGetPostDataWithIsInvisibleTrue()
+    {
+        $noCaptcha = $this->getMockBuilder(HCaptcha::class)->setConstructorArgs([
+            '123',
+            'url',
+            'key',
+            'user-agent',
+            null,
+            'proxy-address',
+            'proxy-port',
+            'proxy-login',
+            'proxy-password',
+            'proxy-type',
+            true // isInvisible = true
+        ])->getMock();
+
+        $stub = $this->getNoCaptchaReflection();
+
+        $getPostData = $this->getPostDataMethod($stub);
+
+        $postData = $getPostData->invoke($noCaptcha);
+
+        $this->assertEquals('HCaptchaTask', $postData['type']);
+        $this->assertEquals('url', $postData['websiteURL']);
+        $this->assertEquals('key', $postData['websiteKey']);
+        $this->assertEquals('user-agent', $postData['userAgent']);
+        $this->assertEquals('proxy-type', $postData['proxyType']);
+        $this->assertEquals('proxy-address', $postData['proxyAddress']);
+        $this->assertEquals('proxy-port', $postData['proxyPort']);
+        $this->assertEquals('proxy-login', $postData['proxyLogin']);
+        $this->assertEquals('proxy-password', $postData['proxyPassword']);
+        $this->assertEquals(true, $postData['isInvisible']);
     }
 
     protected function getNoCaptchaReflection(): ReflectionClass
